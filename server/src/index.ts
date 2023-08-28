@@ -1,6 +1,6 @@
 import "./conf"
 
-import Fastify, { FastifyInstance } from "fastify"
+import Fastify, { FastifyInstance, RouteOptions } from "fastify"
 import { PrismaClient } from "@prisma/client"
 import { prisma } from "./prisma"
 import formBody from "@fastify/formbody"
@@ -9,6 +9,13 @@ import swaggerUi from "@fastify/swagger-ui"
 import fp from "fastify-plugin"
 import fastifyCors from "@fastify/cors"
 import type { User } from "@prisma/client"
+
+import {
+  serializerCompiler,
+  validatorCompiler,
+  ZodTypeProvider,
+} from "fastify-type-provider-zod"
+import { z } from "zod"
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -47,11 +54,20 @@ const swaggerPlugin = fp(async (fastify: FastifyInstance) => {
   })
 })
 
-async function main() {
-  const fastify = Fastify({
-    logger: true,
-  })
+const fastify = Fastify({
+  logger: true,
+})
 
+fastify.setValidatorCompiler(validatorCompiler)
+fastify.setSerializerCompiler(serializerCompiler)
+
+export const route = () => {
+  return fastify.withTypeProvider<ZodTypeProvider>().route
+}
+
+export type HanlderType = Parameters<ReturnType<typeof route>>[0]
+
+async function main() {
   await fastify.register(formBody)
 
   await fastify.register(swaggerPlugin)

@@ -1,10 +1,13 @@
-import { FastifyReply, FastifyRequest, RouteOptions } from "fastify"
+import { FastifyRequest, RouteOptions } from "fastify"
 import { z } from "zod"
 import { requireAuth } from "../../hooks/require-auth"
+import { HanlderType, route } from "../../.."
 
 const BodySchema = z.object({
   id: z.enum(["foo", "bar"]),
 })
+
+type Body = z.infer<typeof BodySchema>
 
 export const options: RouteOptions = {
   method: "POST",
@@ -13,34 +16,45 @@ export const options: RouteOptions = {
     body: BodySchema,
   },
   preHandler: [requireAuth],
-  handler: async ({ body }, rep) => {
+  handler: async ({ body }: FastifyRequest<{ Body: Body }>, rep) => {
     return rep.code(200).send({
       foo: body.id,
     })
   },
 }
 
-class Route<TBody> {
-  _body: TBody
-
-  constructor(body: TBody) {
-    this._body = body
-  }
-
-  body(body: TBody) {
-    this._body = body
-
-    return this
-  }
-}
-
-const route = () => {}
-route()
-  .body(
-    z.object({
+export default route()({
+  method: "POST",
+  url: "/",
+  schema: {
+    querystring: z.object({
+      name: z.string().min(4),
+    }),
+    body: z.object({
       id: z.enum(["foo", "bar"]),
+      data: z.union([
+        z.object({
+          test: z.enum(["test"]),
+          bar: z.enum(["vlad"]),
+        }),
+        z.object({
+          test: z.enum(["bar"]),
+          bar: z.enum(["jorge"]),
+        }),
+      ]),
+    }),
+  },
+  // preHandler: [requireAuth],
+  handler: async ({ body, query }, rep) => {
+    if (body.data.test === "test") {
+      body.data.bar
+    } else {
+      body.data.bar
+    }
+
+    // query.name
+    return rep.code(200).send({
+      foo: body.id,
     })
-  )
-  .handler(({ body }) => {
-    console.log(body)
-  })
+  },
+})
