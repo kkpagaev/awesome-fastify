@@ -1,4 +1,4 @@
-import { preHandlerAsyncHookHandler } from "fastify"
+import { onRequestHookHandler } from "fastify"
 import { UnauthorizedException } from "../exceptions/unauthorized.exception"
 import { verifyJwt } from "../../services/auth/jwt"
 import { prisma } from "../../prisma"
@@ -8,7 +8,7 @@ export class JwtError extends Error {
     super("Invalid JWT")
   }
 }
-export const requireAuth: preHandlerAsyncHookHandler = async (req) => {
+export const requireAuth: onRequestHookHandler = async (req) => {
   const authHeader = req.headers.authorization
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     throw new UnauthorizedException()

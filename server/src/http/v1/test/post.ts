@@ -5,6 +5,7 @@ export default createRoute({
     id: z.enum(["foo", "bar"]),
   }),
   method: "POST",
+  auth: true,
   handler() {
     return {
       hello: "world",

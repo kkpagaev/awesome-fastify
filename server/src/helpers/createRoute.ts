@@ -4,8 +4,11 @@ import {
   FastifyReply,
   RouteOptions,
   FastifySchema,
+  preHandlerAsyncHookHandler,
+  onRequestHookHandler,
 } from "fastify"
 import { ZodTypeAny, z } from "zod"
+import { requireAuth } from "../http/hooks/require-auth"
 
 export type Route<
   Body extends ZodTypeAny,
@@ -19,6 +22,8 @@ export type Route<
   url?: string
   params?: Params
   headers?: Headers
+  preHandlers?: Array<preHandlerAsyncHookHandler>
+  auth?: boolean
   handler: (
     req: FastifyRequest<{
       Body: z.infer<Body>
@@ -42,10 +47,17 @@ export function createRoute<
   if (route.params) schema.params = route.params
   if (route.headers) schema.headers = route.headers
 
-  return <RouteOptions>{
+  const onRequest = Array<onRequestHookHandler>(0)
+  if (route.auth === true) onRequest.push(requireAuth)
+
+  const options: RouteOptions = {
     url: route.url ?? "/",
     method: route.method ?? "GET",
     schema: schema,
+    preHandler: route.preHandlers ?? [],
+    onRequest: onRequest,
     handler: route.handler,
   }
+
+  return options
 }
