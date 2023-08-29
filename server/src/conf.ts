@@ -9,13 +9,6 @@ const configSchema = z.object({
   JWT_SECRET: z.string(),
 })
 
-type Config = z.infer<typeof configSchema>
+export type Config = z.infer<typeof configSchema>
 
-const config: Config = configSchema.parse(process.env)
-
-declare global {
-  // eslint-disable-next-line no-var, no-unused-vars
-  var conf: Config
-}
-
-global.conf = config
+export const config: Config = configSchema.parse(process.env)

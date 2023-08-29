@@ -1,9 +1,10 @@
 import { PrismaClient } from "@prisma/client"
+import { config } from "./conf"
 
 export const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: conf.DATABASE_URL,
+      url: config.DATABASE_URL,
     },
   },
 })

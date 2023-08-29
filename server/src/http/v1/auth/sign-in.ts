@@ -1,18 +1,19 @@
-import { RouteOptions } from "fastify"
-import { SignInSchema, SignIn } from "../../../schema/sign-in.schema"
 import { createJwt } from "../../../services/auth/jwt"
 import { findUserByEmail } from "../../../services/user/repository"
 import { UnauthorizedException } from "../../exceptions/unauthorized.exception"
 import * as bcrypt from "bcrypt"
+import { z } from "zod"
 
-export const options: RouteOptions = {
+export default createRoute({
   method: "POST",
   url: "/sign-in",
-  schema: {
-    body: SignInSchema,
-  },
-  handler: async (req, rep) => {
-    const { email, password } = req.body as SignIn
+  body: z.object({
+    email: z.string().email(),
+    password: z.string().min(6),
+    username: z.string().min(2),
+  }),
+  handler: async ({ body }, rep) => {
+    const { email, password } = body
 
     const user = await findUserByEmail(email)
 
@@ -32,4 +33,4 @@ export const options: RouteOptions = {
       accessToken,
     })
   },
-}
+})

@@ -1,19 +1,41 @@
-import { RouteOptions } from "fastify"
-import { SignUp, SignUpSchema } from "../../../schema/sign-up.schema"
-import { signUp } from "../../../services/auth/sign-up"
+import { z } from "zod"
+import { PASSWORD_MIN_LENGTH } from "../../../const"
+import {
+  userEmailExists,
+  userNicknameExists,
+} from "../../../services/user/repository"
+import { ConflictException } from "../../exceptions/conflict-exception"
+import * as bcrypt from "bcrypt"
 
-export const options: RouteOptions = {
+export default createRoute({
   method: "POST",
   url: "/sign-up",
-  schema: {
-    body: SignUpSchema,
-  },
-  handler: async (req, rep) => {
-    const body = req.body as SignUp
-    const user = await signUp(body)
+  body: z.object({
+    email: z.string().email(),
+    password: z.string().min(PASSWORD_MIN_LENGTH),
+    username: z.string().min(2),
+  }),
+  async handler({ body }, rep) {
+    if (await userEmailExists(body.email)) {
+      throw new ConflictException("User email already exists")
+    }
+
+    if (await userNicknameExists(body.username)) {
+      throw new ConflictException("Username already exists")
+    }
+
+    const passwordHash = await bcrypt.hash(body.password, 10)
+
+    const user = await prisma.user.create({
+      data: {
+        username: body.username,
+        email: body.email,
+        password: passwordHash,
+      },
+    })
 
     return rep.code(201).send({
       user,
     })
   },
-}
+})

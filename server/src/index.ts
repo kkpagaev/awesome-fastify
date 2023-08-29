@@ -1,21 +1,19 @@
 import "./conf"
+import "./globals"
 
-import Fastify, { FastifyInstance, RouteOptions } from "fastify"
+import Fastify from "fastify"
 import { PrismaClient } from "@prisma/client"
 import { prisma } from "./prisma"
 import formBody from "@fastify/formbody"
-import swagger from "@fastify/swagger"
-import swaggerUi from "@fastify/swagger-ui"
-import fp from "fastify-plugin"
+// import swagger from "@fastify/swagger"
+// import swaggerUi from "@fastify/swagger-ui"
 import fastifyCors from "@fastify/cors"
 import type { User } from "@prisma/client"
-
-import {
-  serializerCompiler,
-  validatorCompiler,
-  ZodTypeProvider,
-} from "fastify-type-provider-zod"
-import { z } from "zod"
+import { ZodSchema } from "zod"
+import { autoRoute } from "./helpers/autoRoute"
+import { createPlugin } from "./helpers/createPlugin"
+import { HttpException } from "./http/exceptions/http-exception"
+import { UnprocessableEntityException } from "./http/exceptions/unprocessable-entity.exceptions"
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -28,57 +26,79 @@ declare module "fastify" {
   }
 }
 
-const swaggerPlugin = fp(async (fastify: FastifyInstance) => {
-  await fastify.register(swagger, {
-    swagger: {
-      info: {
-        title: "Test swagger",
-        description: "Testing the Fastify swagger API",
-        version: "0.1.0",
-      },
-      host: "localhost:3000",
-      consumes: ["application/json"],
-      produces: ["application/json"],
-      securityDefinitions: {
-        apiKey: {
-          type: "apiKey",
-          name: "apiKey",
-          in: "header",
-        },
-      },
-    },
-  })
-
-  await fastify.register(swaggerUi, {
-    routePrefix: "/swagger",
-  })
-})
-
-const fastify = Fastify({
-  logger: true,
-})
-
-fastify.setValidatorCompiler(validatorCompiler)
-fastify.setSerializerCompiler(serializerCompiler)
-
-export const route = () => {
-  return fastify.withTypeProvider<ZodTypeProvider>().route
-}
-
-export type HanlderType = Parameters<ReturnType<typeof route>>[0]
+// const swaggerPlugin = fp(async (fastify: FastifyInstance) => {
+//   await fastify.register(swagger, {
+//     swagger: {
+//       info: {
+//         title: "Test swagger",
+//         description: "Testing the Fastify swagger API",
+//         version: "0.1.0",
+//       },
+//       host: "localhost:3000",
+//       consumes: ["application/json"],
+//       produces: ["application/json"],
+//       securityDefinitions: {
+//         apiKey: {
+//           type: "apiKey",
+//           name: "apiKey",
+//           in: "header",
+//         },
+//       },
+//     },
+//   })
+//
+//   await fastify.register(swaggerUi, {
+//     routePrefix: "/swagger",
+//   // })
+// })
 
 async function main() {
+  const fastify = Fastify({
+    logger: true,
+  })
+
   await fastify.register(formBody)
 
-  await fastify.register(swaggerPlugin)
+  // await fastify.register(swaggerPlugin)
 
   fastify.get("/hello", async () => {
     return { hello: "world" }
   })
 
-  const { plugin, prefix } = await import("./http")
-  await fastify.register(plugin, {
-    prefix,
+  fastify
+    .setValidatorCompiler(({ schema }: { schema: ZodSchema }) => {
+      return (data) => {
+        const result = schema.safeParse(data)
+        if (result.success === true) {
+          return result.data
+        } else {
+          throw new UnprocessableEntityException(result.error.errors)
+        }
+      }
+    })
+    .setErrorHandler<HttpException>(async (error, request, reply) => {
+      if ("status" in error) {
+        return reply.status(error.status).send({
+          status: error.status,
+          message: error.message,
+          details: error.details,
+        })
+      } else {
+        request.server.log.error(error)
+
+        return reply.status(500).send({
+          status: 500,
+          message: "Internal Server Error",
+        })
+      }
+    })
+
+  // auto import
+  const apiPrefix = "api/v1"
+  const routesPath = "src/http/v1"
+
+  await fastify.register(await autoRoute(routesPath, apiPrefix), {
+    prefix: apiPrefix,
   })
 
   await fastify.register(fastifyCors, {
@@ -86,13 +106,13 @@ async function main() {
     methods: ["GET", "POST", "PATCH", "DELETE"],
     credentials: true,
   })
-
   await fastify.ready()
-  fastify.swagger()
+
+  // fastify.swagger()
 
   const start = async () => {
     try {
-      await fastify.listen({ port: conf.PORT })
+      await fastify.listen({ port: env.PORT })
     } catch (err) {
       fastify.log.error(err)
       process.exit(1)

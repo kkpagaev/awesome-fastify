@@ -1,17 +1,21 @@
 import { FastifyPluginAsync, RouteOptions } from "fastify"
 
-export interface PluginModule {
+export type PluginModule = {
   plugin: FastifyPluginAsync
   prefix: string
 }
+
+type OptionsModule = Promise<{
+  default: RouteOptions
+}>
 
 export interface RouteModule {
   options: RouteOptions
 }
 
-export interface CreatePluginConfiguration {
+export type CreatePluginConfiguration = {
   plugins?: (Promise<PluginModule> | PluginModule)[]
-  routes?: (Promise<RouteModule> | RouteModule)[]
+  routes?: (Promise<RouteModule> | RouteModule)[] | OptionsModule[]
 
   extend?: FastifyPluginAsync
 }
@@ -27,7 +31,11 @@ export const createPlugin = (
         )
       ),
       Promise.all(config.routes ?? []).then((routes) =>
-        routes.map(({ options }) => fastify.route(options))
+        routes.map((options: any) =>
+          options.default
+            ? fastify.route(options.default)
+            : fastify.route(options.options)
+        )
       ),
       config.extend ? config.extend(fastify, opts) : Promise.resolve(),
     ])
