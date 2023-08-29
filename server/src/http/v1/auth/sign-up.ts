@@ -16,12 +16,11 @@ export default createRoute({
     username: z.string().min(2),
   }),
   async handler({ body }, rep) {
-    if (await userEmailExists(body.email)) {
+    if (
+      (await userEmailExists(body.email)) ||
+      (await userNicknameExists(body.username))
+    ) {
       throw new ConflictException("User email already exists")
-    }
-
-    if (await userNicknameExists(body.username)) {
-      throw new ConflictException("Username already exists")
     }
 
     const passwordHash = await bcrypt.hash(body.password, 10)
