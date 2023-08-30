@@ -30,5 +30,7 @@ export const requireAuth: onRequestHookHandler = async (req) => {
     throw new UnauthorizedException()
   }
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   req.user = user
 }

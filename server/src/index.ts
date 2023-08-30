@@ -8,7 +8,6 @@ import formBody from "@fastify/formbody"
 // import swagger from "@fastify/swagger"
 // import swaggerUi from "@fastify/swagger-ui"
 import fastifyCors from "@fastify/cors"
-import type { User } from "@prisma/client"
 import { ZodSchema } from "zod"
 import { autoRoute } from "./helpers/autoRoute"
 import { HttpException } from "./http/exceptions/http-exception"
@@ -17,11 +16,6 @@ import { UnprocessableEntityException } from "./http/exceptions/unprocessable-en
 declare module "fastify" {
   interface FastifyInstance {
     prisma: PrismaClient
-  }
-
-  // eslint-disable-next-line no-unused-vars
-  interface FastifyRequest {
-    user?: User
   }
 }
 

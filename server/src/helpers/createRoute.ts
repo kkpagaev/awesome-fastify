@@ -9,6 +9,7 @@ import {
 } from "fastify"
 import { ZodTypeAny, z } from "zod"
 import { requireAuth } from "../http/hooks/require-auth"
+import type { User } from "@prisma/client"
 
 export type Route<
   Body extends ZodTypeAny,
@@ -23,17 +24,34 @@ export type Route<
   params?: Params
   headers?: Headers
   preHandlers?: Array<preHandlerAsyncHookHandler>
-  auth?: boolean
-  handler: (
-    req: FastifyRequest<{
-      Body: z.infer<Body>
-      Querystring: z.infer<Query>
-      Params: z.infer<Params>
-      Headers: z.infer<Headers>
-    }>,
-    rep: FastifyReply
-  ) => any
-}
+} & (
+  | {
+      auth: true
+      handler: (
+        req: FastifyRequest<{
+          Body: z.infer<Body>
+          Querystring: z.infer<Query>
+          Params: z.infer<Params>
+          Headers: z.infer<Headers>
+        }> & {
+          user: User
+        },
+        rep: FastifyReply
+      ) => any
+    }
+  | {
+      auth?: false
+      handler: (
+        req: FastifyRequest<{
+          Body: z.infer<Body>
+          Querystring: z.infer<Query>
+          Params: z.infer<Params>
+          Headers: z.infer<Headers>
+        }>,
+        rep: FastifyReply
+      ) => any
+    }
+)
 
 export function createRoute<
   T extends ZodTypeAny,
@@ -48,7 +66,7 @@ export function createRoute<
   if (route.headers) schema.headers = route.headers
 
   const onRequest = Array<onRequestHookHandler>(0)
-  if (route.auth === true) onRequest.push(requireAuth)
+  if (route.auth) onRequest.push(requireAuth)
 
   const options: RouteOptions = {
     url: route.url ?? "/",

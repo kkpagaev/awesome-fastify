@@ -6,9 +6,7 @@ export default createRoute({
   }),
   method: "POST",
   auth: true,
-  handler() {
-    return {
-      hello: "world",
-    }
+  handler({ user }) {
+    return user
   },
 })
