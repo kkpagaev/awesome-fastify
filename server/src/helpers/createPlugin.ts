@@ -9,9 +9,13 @@ type OptionsModule = Promise<{
   default: RouteOptions
 }>
 
-export interface RouteModule {
-  options: RouteOptions
-}
+export type RouteModule =
+  | {
+      default: RouteOptions
+    }
+  | {
+      options: RouteOptions
+    }
 
 export type CreatePluginConfiguration = {
   plugins?: (Promise<PluginModule> | PluginModule)[]
@@ -31,8 +35,8 @@ export const createPlugin = (
         )
       ),
       Promise.all(config.routes ?? []).then((routes) =>
-        routes.map((options: any) =>
-          options.default
+        routes.map((options: RouteModule) =>
+          "default" in options
             ? fastify.route(options.default)
             : fastify.route(options.options)
         )
