@@ -73,10 +73,10 @@ export function createRoute<
   const onRequest = Array<onRequestHookHandler>(0)
   if (route.auth) onRequest.push(requireAuth)
 
-  return (name, method) => {
+  return (url, method) => {
     return {
-      url: route.url ?? "/",
-      method: route.method ?? "GET",
+      url: route.url ?? url ?? "/",
+      method: route.method ?? method ?? "GET",
       schema: schema,
       preHandler: route.preHandlers ?? [],
       onRequest: onRequest,
