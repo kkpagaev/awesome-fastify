@@ -46,8 +46,8 @@ function parseFileName(fileName: string): { url: string; method: HTTPMethods } {
   }
 
   return {
-    url: url.replace(/\[([a-zA-Z]+)\]/g, ":$1"),
-    method: "GET",
+    url: "/" + url.replace(/\[([a-zA-Z]+)\]/g, ":$1"),
+    method: method as HTTPMethods,
   }
 }
 
