@@ -5,10 +5,6 @@ export type PluginModule = {
   prefix: string
 }
 
-type OptionsModule = Promise<{
-  default: RouteOptions
-}>
-
 export type RouteModule =
   | {
       default: RouteOptions
@@ -18,30 +14,28 @@ export type RouteModule =
     }
 
 export type CreatePluginConfiguration = {
-  plugins?: (Promise<PluginModule> | PluginModule)[]
-  routes?: (Promise<RouteModule> | RouteModule)[] | OptionsModule[]
+  plugins?: PluginModule[]
+  routes?: RouteModule[]
 
   extend?: FastifyPluginAsync
 }
 
-export const createPlugin = (
-  config: CreatePluginConfiguration
-): FastifyPluginAsync => {
+export const createPlugin = ({
+  plugins,
+  routes,
+  extend,
+}: CreatePluginConfiguration): FastifyPluginAsync => {
   return async (fastify, opts) => {
     await Promise.all([
-      Promise.all(config.plugins ?? []).then((plugins) =>
-        plugins.map((plugin) =>
-          fastify.register(plugin.plugin, { prefix: plugin.prefix })
-        )
+      plugins?.map(({ plugin, prefix }) =>
+        fastify.register(plugin, { prefix })
       ),
-      Promise.all(config.routes ?? []).then((routes) =>
-        routes.map((options: RouteModule) =>
-          "default" in options
-            ? fastify.route(options.default)
-            : fastify.route(options.options)
-        )
+      routes?.map((options) =>
+        "default" in options
+          ? fastify.route(options.default)
+          : fastify.route(options.options)
       ),
-      config.extend ? config.extend(fastify, opts) : Promise.resolve(),
+      extend ? extend(fastify, opts) : Promise.resolve(),
     ])
   }
 }
