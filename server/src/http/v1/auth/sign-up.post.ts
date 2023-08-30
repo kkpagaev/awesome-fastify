@@ -4,8 +4,8 @@ import {
   userEmailExists,
   userNicknameExists,
 } from "../../../services/user/repository"
-import { ConflictException } from "../../exceptions/conflict-exception"
 import * as bcrypt from "bcrypt"
+import { ConflictException } from "../../exceptions"
 
 export default createRoute({
   method: "POST",

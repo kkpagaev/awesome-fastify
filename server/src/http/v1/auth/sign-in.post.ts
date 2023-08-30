@@ -1,8 +1,8 @@
 import { createJwt } from "../../../services/auth/jwt"
 import { findUserByEmail } from "../../../services/user/repository"
-import { UnauthorizedException } from "../../exceptions/unauthorized.exception"
 import * as bcrypt from "bcrypt"
 import { z } from "zod"
+import { UnauthorizedException } from "../../exceptions"
 
 export default createRoute({
   method: "POST",

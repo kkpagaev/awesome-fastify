@@ -11,7 +11,7 @@ import fastifyCors from "@fastify/cors"
 import { ZodSchema } from "zod"
 import { autoRoute } from "./helpers/autoRoute"
 import { HttpException } from "./http/exceptions/http-exception"
-import { UnprocessableEntityException } from "./http/exceptions/unprocessable-entity.exceptions"
+import { UnprocessableEntityException } from "./http/exceptions"
 import type { User } from "@prisma/client"
 
 declare module "fastify" {
