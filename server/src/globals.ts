@@ -1,13 +1,10 @@
 import { ZodTypeAny } from "zod"
-import {
-  CreateRouteOptionsGenerator,
-  Route,
-  createRoute,
-} from "./helpers/createRoute"
+import { Route, createRoute } from "./helpers/createRoute"
 import { PrismaClient } from "@prisma/client"
 import { config } from "./conf"
 import { prisma } from "./prisma"
 import { Config } from "./conf"
+import { RouteOptions } from "fastify"
 
 declare global {
   function createRoute<
@@ -15,7 +12,7 @@ declare global {
     Q extends ZodTypeAny,
     P extends ZodTypeAny,
     H extends ZodTypeAny
-  >(route: Route<T, Q, P, H>): CreateRouteOptionsGenerator
+  >(route: Route<T, Q, P, H>): RouteOptions
 
   // eslint-disable-next-line no-var
   var prisma: PrismaClient

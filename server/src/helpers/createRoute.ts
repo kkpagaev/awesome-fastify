@@ -53,17 +53,12 @@ export type Route<
     }
 )
 
-export type CreateRouteOptionsGenerator = (
-  name: string,
-  method: HTTPMethods
-) => RouteOptions
-
 export function createRoute<
   T extends ZodTypeAny,
   Q extends ZodTypeAny,
   P extends ZodTypeAny,
   H extends ZodTypeAny
->(route: Route<T, Q, P, H>): CreateRouteOptionsGenerator {
+>(route: Route<T, Q, P, H>): RouteOptions {
   const schema: FastifySchema = {}
   if (route.body) schema.body = route.body
   if (route.query) schema.querystring = route.query
@@ -73,14 +68,12 @@ export function createRoute<
   const onRequest = Array<onRequestHookHandler>(0)
   if (route.auth) onRequest.push(requireAuth)
 
-  return (url, method) => {
-    return {
-      url: route.url ?? url ?? "/",
-      method: route.method ?? method ?? "GET",
-      schema: schema,
-      preHandler: route.preHandlers ?? [],
-      onRequest: onRequest,
-      handler: route.handler,
-    }
+  return {
+    url: route.url ?? "/",
+    method: route.method ?? "GET",
+    schema: schema,
+    preHandler: route.preHandlers ?? [],
+    onRequest: onRequest,
+    handler: route.handler,
   }
 }

@@ -1,8 +1,7 @@
 import * as fs from "fs"
 import { join } from "path"
 import { CreatePluginConfiguration, createPlugin } from "./createPlugin"
-import { FastifyPluginAsync, HTTPMethods } from "fastify"
-import { CreateRouteOptionsGenerator } from "./createRoute"
+import { FastifyPluginAsync, HTTPMethods, RouteOptions } from "fastify"
 
 function isDirectory(path: string): boolean {
   return fs.statSync(path).isDirectory()
@@ -78,18 +77,13 @@ export async function autoRoute(
         )
         continue
       }
-      const routeGenerator: CreateRouteOptionsGenerator = route.default
-
-      if (typeof routeGenerator !== "function") {
-        console.error(
-          `ERROR importing ${fullPath}/${file} route, it must export default createRoute`
-        )
-        continue
-      }
+      const routeOptions: RouteOptions = route.default
 
       const { url, method } = parseFileName(file)
+      routeOptions.url = "/" + url
+      routeOptions.method = method
 
-      config.routes?.push(routeGenerator(url, method))
+      config.routes?.push(routeOptions)
     }
   }
 
