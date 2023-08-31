@@ -10,6 +10,7 @@ import {
 import { ZodTypeAny, z } from "zod"
 import { requireAuth } from "../http/hooks/require-auth"
 import type { User } from "@prisma/client"
+import { HttpException } from "../http/exceptions"
 
 export type Route<
   Body extends ZodTypeAny,
@@ -24,6 +25,18 @@ export type Route<
   params?: Params
   headers?: Headers
   preHandlers?: Array<preHandlerAsyncHookHandler>
+  guard?: Array<{
+    // if handler returns true throw error
+    handler: (
+      req: FastifyRequest<{
+        Body: z.infer<Body>
+        Querystring: z.infer<Query>
+        Params: z.infer<Params>
+        Headers: z.infer<Headers>
+      }>
+    ) => boolean | Promise<boolean>
+    error: () => HttpException
+  }>
 } & (
   | {
       auth: true
@@ -68,11 +81,24 @@ export function createRoute<
   const onRequest = Array<onRequestHookHandler>(0)
   if (route.auth) onRequest.push(requireAuth)
 
+  let preHandler = route.preHandlers ?? []
+
+  if (route.guard) {
+    const guards = route.guard.map(({ handler, error }) => {
+      return async (req: any) => {
+        if (await handler(req)) {
+          throw error()
+        }
+      }
+    })
+    preHandler = preHandler.concat(guards)
+  }
+
   return {
     url: route.url ?? "/",
     method: route.method ?? "GET",
     schema: schema,
-    preHandler: route.preHandlers ?? [],
+    preHandler: preHandler,
     onRequest: onRequest,
     handler: route.handler,
   }

@@ -80,7 +80,7 @@ export async function autoRoute(
       const routeOptions: RouteOptions = route.default
 
       const { url, method } = parseFileName(file)
-      routeOptions.url = "/" + url
+      routeOptions.url = url
       routeOptions.method = method
 
       config.routes?.push(routeOptions)
