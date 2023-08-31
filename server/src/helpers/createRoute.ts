@@ -28,6 +28,18 @@ export type Route<
   guard?: Array<
     | {
         // if handler returns true throw error
+        unless: (
+          req: FastifyRequest<{
+            Body: z.infer<Body>
+            Querystring: z.infer<Query>
+            Params: z.infer<Params>
+            Headers: z.infer<Headers>
+          }>
+        ) => boolean | Promise<boolean>
+        throw: (() => HttpException) | HttpException
+      }
+    | {
+        // if handler returns true throw error
         if: (
           req: FastifyRequest<{
             Body: z.infer<Body>
@@ -101,7 +113,9 @@ export function createRoute<
         if ("handler" in guard) {
           return guard.handler(req)
         }
-        if (!(await guard.if(req))) {
+        const fn = "if" in guard ? guard.if : (req) => !guard.unless(req)
+
+        if (await fn(req)) {
           if (typeof guard.throw === "function") {
             throw guard.throw()
           } else {
