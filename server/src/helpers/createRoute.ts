@@ -25,18 +25,30 @@ export type Route<
   params?: Params
   headers?: Headers
   preHandlers?: Array<preHandlerAsyncHookHandler>
-  guard?: Array<{
-    // if handler returns true throw error
-    handler: (
-      req: FastifyRequest<{
-        Body: z.infer<Body>
-        Querystring: z.infer<Query>
-        Params: z.infer<Params>
-        Headers: z.infer<Headers>
-      }>
-    ) => boolean | Promise<boolean>
-    error: () => HttpException
-  }>
+  guard?: Array<
+    | {
+        // if handler returns true throw error
+        if: (
+          req: FastifyRequest<{
+            Body: z.infer<Body>
+            Querystring: z.infer<Query>
+            Params: z.infer<Params>
+            Headers: z.infer<Headers>
+          }>
+        ) => boolean | Promise<boolean>
+        throw: (() => HttpException) | HttpException
+      }
+    | {
+        handler: (
+          req: FastifyRequest<{
+            Body: z.infer<Body>
+            Querystring: z.infer<Query>
+            Params: z.infer<Params>
+            Headers: z.infer<Headers>
+          }>
+        ) => void
+      }
+  >
 } & (
   | {
       auth: true
@@ -67,11 +79,11 @@ export type Route<
 )
 
 export function createRoute<
-  T extends ZodTypeAny,
+  B extends ZodTypeAny,
   Q extends ZodTypeAny,
   P extends ZodTypeAny,
   H extends ZodTypeAny
->(route: Route<T, Q, P, H>): RouteOptions {
+>(route: Route<B, Q, P, H>): RouteOptions {
   const schema: FastifySchema = {}
   if (route.body) schema.body = route.body
   if (route.query) schema.querystring = route.query
@@ -84,10 +96,17 @@ export function createRoute<
   let preHandler = route.preHandlers ?? []
 
   if (route.guard) {
-    const guards = route.guard.map(({ handler, error }) => {
+    const guards = route.guard.map((guard) => {
       return async (req: any) => {
-        if (await handler(req)) {
-          throw error()
+        if ("handler" in guard) {
+          return guard.handler(req)
+        }
+        if (!(await guard.if(req))) {
+          if (typeof guard.throw === "function") {
+            throw guard.throw()
+          } else {
+            throw guard.throw
+          }
         }
       }
     })

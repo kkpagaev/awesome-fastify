@@ -8,11 +8,11 @@ import { RouteOptions } from "fastify"
 
 declare global {
   function createRoute<
-    T extends ZodTypeAny,
+    B extends ZodTypeAny,
     Q extends ZodTypeAny,
     P extends ZodTypeAny,
     H extends ZodTypeAny
-  >(route: Route<T, Q, P, H>): RouteOptions
+  >(route: Route<B, Q, P, H>): RouteOptions
 
   // eslint-disable-next-line no-var
   var prisma: PrismaClient

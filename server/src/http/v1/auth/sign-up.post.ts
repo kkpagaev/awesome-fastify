@@ -10,12 +10,12 @@ import { ConflictException } from "../../exceptions"
 export default createRoute({
   guard: [
     {
-      handler: ({ body }) => userEmailExists(body.email),
-      error: () => new ConflictException("User email already exists"),
+      if: ({ body }) => userEmailExists(body.email),
+      throw: new ConflictException("User email already exists"),
     },
     {
-      handler: ({ body }) => userNicknameExists(body.username),
-      error: () => new ConflictException("User username already exists"),
+      if: ({ body }) => userNicknameExists(body.username),
+      throw: new ConflictException("User username already exists"),
     },
   ],
   body: z.object({
