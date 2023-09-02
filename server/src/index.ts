@@ -15,8 +15,6 @@ import fastifyPlugin from "fastify-plugin"
 import {
   ResponseValidationError,
   jsonSchemaTransform,
-  serializerCompiler,
-  validatorCompiler,
 } from "fastify-type-provider-zod"
 import { UnprocessableEntityException, HttpException } from "./exceptions"
 

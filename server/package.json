@@ -11,7 +11,8 @@
     "db:drop": "prisma migrate reset",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "yarn run exec prisma/seed.ts",
-    "db:update": "prisma migrate dev"
+    "db:update": "prisma migrate dev",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
   },
   "dependencies": {
     "@fastify/cors": "^8.3.0",
