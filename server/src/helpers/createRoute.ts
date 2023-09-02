@@ -71,12 +71,12 @@ export type Route<
 function generatePreHadlersFromGuards<T extends FastifyRequest>(
   guards: Guard<T> | Array<Guard<T>>
 ): Array<preHandlerAsyncHookHandler> {
-  const transform = (guard) => {
+  return (Array.isArray(guards) ? guards : [guards]).map((guard) => {
     return async (req: any) => {
       if ("handler" in guard) {
         return guard.handler(req)
       }
-      const fn = "if" in guard ? guard.if : (req) => !guard.unless(req)
+      const fn = "if" in guard ? guard.if : (req: any) => !guard.unless(req)
 
       if (await fn(req)) {
         if (typeof guard.throw === "function") {
@@ -86,12 +86,7 @@ function generatePreHadlersFromGuards<T extends FastifyRequest>(
         }
       }
     }
-  }
-  if (Array.isArray(guards)) {
-    return guards.map((guard) => transform(guard))
-  } else {
-    return [transform(guards)]
-  }
+  })
 }
 
 export function createRoute<
