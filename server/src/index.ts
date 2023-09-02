@@ -1,18 +1,21 @@
 import "./conf"
 import "./globals"
 
-import Fastify from "fastify"
+import Fastify, { FastifyInstance } from "fastify"
 import { PrismaClient } from "@prisma/client"
 import { prisma } from "./prisma"
 import formBody from "@fastify/formbody"
-// import swagger from "@fastify/swagger"
-// import swaggerUi from "@fastify/swagger-ui"
+import swaggerUi from "@fastify/swagger-ui"
 import fastifyCors from "@fastify/cors"
 import { ZodSchema } from "zod"
 import { autoRoute } from "./helpers/autoRoute"
 import { HttpException } from "./http/exceptions/http-exception"
 import { UnprocessableEntityException } from "./http/exceptions"
 import { createPlugin } from "./helpers/createPlugin"
+import swagger from "@fastify/swagger"
+import fastifyPlugin from "fastify-plugin"
+
+import { jsonSchemaTransform } from "fastify-type-provider-zod"
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -20,31 +23,32 @@ declare module "fastify" {
   }
 }
 
-// const swaggerPlugin = fp(async (fastify: FastifyInstance) => {
-//   await fastify.register(swagger, {
-//     swagger: {
-//       info: {
-//         title: "Test swagger",
-//         description: "Testing the Fastify swagger API",
-//         version: "0.1.0",
-//       },
-//       host: "localhost:3000",
-//       consumes: ["application/json"],
-//       produces: ["application/json"],
-//       securityDefinitions: {
-//         apiKey: {
-//           type: "apiKey",
-//           name: "apiKey",
-//           in: "header",
-//         },
-//       },
-//     },
-//   })
-//
-//   await fastify.register(swaggerUi, {
-//     routePrefix: "/swagger",
-//   // })
-// })
+const swaggerPlugin = fastifyPlugin(async (fastify: FastifyInstance) => {
+  await fastify.register(swagger, {
+    transform: jsonSchemaTransform,
+    swagger: {
+      info: {
+        title: "Test swagger",
+        description: "Testing the Fastify swagger API",
+        version: "0.1.0",
+      },
+      host: "localhost:3000",
+      consumes: ["application/json"],
+      produces: ["application/json"],
+      securityDefinitions: {
+        apiKey: {
+          type: "apiKey",
+          name: "apiKey",
+          in: "header",
+        },
+      },
+    },
+  })
+
+  await fastify.register(swaggerUi, {
+    routePrefix: "/swagger",
+  })
+})
 
 async function main() {
   const fastify = Fastify({
@@ -53,7 +57,7 @@ async function main() {
 
   await fastify.register(formBody)
 
-  // await fastify.register(swaggerPlugin)
+  await fastify.register(swaggerPlugin)
 
   fastify.get("/hello", async () => {
     return { hello: "world" }

@@ -3,7 +3,7 @@
   "packageManager": "yarn@3.5.0",
   "scripts": {
     "dev": "nodemon --quiet src/index.ts",
-    "debug": "nodemon --exec 'node --inspect -r tsconfig-paths/register -r ts-node/register src/index.ts'",
+    "debug": "nodemon --exec 'node --inspect-brk -r tsconfig-paths/register -r ts-node/register src/index.ts'",
     "exec": "node --experimental-specifier-resolution=node --loader ts-node/esm",
     "start": "yarn run exec .",
     "start:node": "node -r ts-node/register/transpile-only -r tsconfig-paths/register dist/index.js",
@@ -37,6 +37,7 @@
     "eslint": "^8.44.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",
+    "fastify-type-provider-zod": "^1.1.9",
     "nodemon": "^2.0.22",
     "prettier": "^2.8.8",
     "prisma": "^4.16.2",
