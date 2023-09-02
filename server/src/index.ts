@@ -12,6 +12,7 @@ import { ZodSchema } from "zod"
 import { autoRoute } from "./helpers/autoRoute"
 import { HttpException } from "./http/exceptions/http-exception"
 import { UnprocessableEntityException } from "./http/exceptions"
+import { createPlugin } from "./helpers/createPlugin"
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -90,7 +91,7 @@ async function main() {
   const apiPrefix = "api/v1"
   const routesPath = "src/http/v1"
 
-  await fastify.register(await autoRoute(routesPath, apiPrefix), {
+  await fastify.register(createPlugin(await autoRoute(routesPath, apiPrefix)), {
     prefix: apiPrefix,
   })
 
@@ -115,13 +116,15 @@ async function main() {
   await start()
 }
 
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
-main()
-  .then(async () => {
-    await prisma.$disconnect()
-  })
-  .catch(async (e) => {
-    console.error(e)
-    await prisma.$disconnect()
-    process.exit(1)
-  })
+if (!process.env.SKIP_BOOTSTRAP) {
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  main()
+    .then(async () => {
+      await prisma.$disconnect()
+    })
+    .catch(async (e) => {
+      console.error(e)
+      await prisma.$disconnect()
+      process.exit(1)
+    })
+}

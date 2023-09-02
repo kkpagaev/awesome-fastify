@@ -53,10 +53,11 @@ function parseFileName(fileName: string): { url: string; method: HTTPMethods } {
 export async function autoRoute(
   path: string,
   prefix = ""
-): Promise<FastifyPluginAsync> {
+): Promise<CreatePluginConfiguration> {
   const config: CreatePluginConfiguration = {
     plugins: [],
     routes: [],
+    prefix: prefix,
   }
   const files = fs.readdirSync(path)
   for (const file of files) {
@@ -64,10 +65,7 @@ export async function autoRoute(
     if (isDirectory(fullPath)) {
       const nestedPlugin = await autoRoute(fullPath, prefix + "/" + file)
 
-      config.plugins?.push({
-        plugin: nestedPlugin,
-        prefix: file,
-      })
+      config.plugins?.push(nestedPlugin)
     } else {
       const route = await import(fullPath)
 
@@ -87,5 +85,5 @@ export async function autoRoute(
     }
   }
 
-  return createPlugin(config)
+  return config
 }

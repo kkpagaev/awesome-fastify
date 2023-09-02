@@ -1,14 +1,9 @@
 import { FastifyPluginAsync, RouteOptions } from "fastify"
 
-export type PluginModule = {
-  plugin: FastifyPluginAsync
-  prefix: string
-}
-
 export type CreatePluginConfiguration = {
-  plugins?: PluginModule[]
+  plugins?: CreatePluginConfiguration[]
   routes?: RouteOptions[]
-
+  prefix: string
   extend?: FastifyPluginAsync
 }
 
@@ -19,8 +14,8 @@ export const createPlugin = ({
 }: CreatePluginConfiguration): FastifyPluginAsync => {
   return async (fastify, opts) => {
     await Promise.all([
-      plugins?.map(({ plugin, prefix }) =>
-        fastify.register(plugin, { prefix })
+      plugins?.map((plugin) =>
+        fastify.register(createPlugin(plugin), { prefix: plugin.prefix })
       ),
       routes?.map((options) => fastify.route(options)),
       extend ? extend(fastify, opts) : Promise.resolve(),

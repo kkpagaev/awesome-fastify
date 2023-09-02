@@ -5,8 +5,9 @@ export default createRoute({
   query: z.object({
     id: z.string(),
   }),
+  auth: true,
   roles: [Role.Admin],
-  handler: async (_req, rep) => {
+  async handler(_req, rep) {
     return rep.code(200).send({
       foo: "bar",
     })
