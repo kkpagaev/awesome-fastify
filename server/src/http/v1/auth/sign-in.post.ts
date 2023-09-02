@@ -8,7 +8,6 @@ export default createRoute({
   body: z.object({
     email: z.string().email(),
     password: z.string().min(6),
-    username: z.string().min(2),
   }),
   handler: async ({ body: { email, password } }, rep) => {
     const user = await findUserByEmail(email)

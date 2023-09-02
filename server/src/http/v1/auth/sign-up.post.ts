@@ -1,9 +1,6 @@
 import { z } from "zod"
 import * as bcrypt from "bcrypt"
-import {
-  userEmailExists,
-  userNicknameExists,
-} from "../../../services/user/repository"
+import { userEmailExists } from "../../../services/user/repository"
 import {
   ConflictException,
   UnprocessableEntityException,
@@ -21,22 +18,16 @@ export default createRoute({
       if: ({ body }) => userEmailExists(body.email),
       throw: new ConflictException("User email already exists"),
     },
-    {
-      if: ({ body }) => userNicknameExists(body.username),
-      throw: new ConflictException("User username already exists"),
-    },
   ],
   body: z.object({
     email: z.string().email(),
     password: z.string().min(6),
     passwordConfirm: z.string().min(6),
-    username: z.string().min(2),
   }),
   handler: async ({ body }, rep) =>
     rep.code(201).send({
       user: await prisma.user.create({
         data: {
-          username: body.username,
           email: body.email,
           password: await bcrypt.hash(body.password, 10),
         },
