@@ -63,7 +63,7 @@ export async function autoRoute(
   for (const file of files) {
     const fullPath = join(path, file)
     if (isDirectory(fullPath)) {
-      const nestedPlugin = await autoRoute(fullPath, prefix + "/" + file)
+      const nestedPlugin = await autoRoute(fullPath, file)
 
       config.plugins?.push(nestedPlugin)
     } else {
