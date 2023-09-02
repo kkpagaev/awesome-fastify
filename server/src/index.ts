@@ -9,13 +9,11 @@ import swaggerUi from "@fastify/swagger-ui"
 import fastifyCors from "@fastify/cors"
 import { ZodSchema } from "zod"
 import { autoRoute } from "./helpers/autoRoute"
-import { HttpException } from "./http/exceptions/http-exception"
-import { UnprocessableEntityException } from "./http/exceptions"
 import { createPlugin } from "./helpers/createPlugin"
 import swagger from "@fastify/swagger"
 import fastifyPlugin from "fastify-plugin"
-
 import { jsonSchemaTransform } from "fastify-type-provider-zod"
+import { UnprocessableEntityException, HttpException } from "./exceptions"
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -93,7 +91,7 @@ async function main() {
 
   // auto import
   const apiPrefix = "api/v1"
-  const routesPath = "src/http/v1"
+  const routesPath = "src/v1"
 
   await fastify.register(createPlugin(await autoRoute(routesPath, apiPrefix)), {
     prefix: apiPrefix,

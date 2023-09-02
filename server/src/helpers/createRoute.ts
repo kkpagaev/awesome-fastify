@@ -8,10 +8,10 @@ import {
   onRequestHookHandler,
 } from "fastify"
 import { ZodTypeAny, z } from "zod"
-import { requireAuth } from "../http/hooks/require-auth"
 import type { Role, User } from "@prisma/client"
-import { HttpException } from "../http/exceptions"
-import { requireRoles } from "../http/hooks/require-roles"
+import { HttpException } from "../exceptions"
+import { requireAuth } from "../hooks/require-auth"
+import { requireRoles } from "../hooks/require-roles"
 
 export type Route<
   Body extends ZodTypeAny,

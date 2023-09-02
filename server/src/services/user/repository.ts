@@ -1,5 +1,3 @@
-import { prisma } from "../../prisma"
-
 export const userEmailExists = async (email: string) => {
   const user = await prisma.user.findUnique({
     where: {

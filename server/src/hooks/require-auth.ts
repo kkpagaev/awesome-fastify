@@ -1,7 +1,6 @@
 import { onRequestHookHandler } from "fastify"
 import { UnauthorizedException } from "../exceptions/unauthorized.exception"
-import { verifyJwt } from "../../services/auth/jwt"
-import { prisma } from "../../prisma"
+import { verifyJwt } from "../services/auth/jwt"
 
 export class JwtError extends Error {
   constructor() {

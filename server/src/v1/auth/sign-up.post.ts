@@ -1,10 +1,10 @@
 import { z } from "zod"
 import * as bcrypt from "bcrypt"
-import { userEmailExists } from "../../../services/user/repository"
 import {
   ConflictException,
   UnprocessableEntityException,
 } from "../../exceptions"
+import { userEmailExists } from "../../services/user/repository"
 
 export default createRoute({
   guard: [

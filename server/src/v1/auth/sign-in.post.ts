@@ -1,8 +1,8 @@
-import { createJwt } from "../../../services/auth/jwt"
-import { findUserByEmail } from "../../../services/user/repository"
 import * as bcrypt from "bcrypt"
 import { z } from "zod"
 import { UnauthorizedException } from "../../exceptions"
+import { createJwt } from "../../services/auth/jwt"
+import { findUserByEmail } from "../../services/user/repository"
 
 export default createRoute({
   body: z.object({
