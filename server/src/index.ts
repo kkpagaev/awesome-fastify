@@ -91,7 +91,7 @@ async function main() {
 
   // auto import
   const apiPrefix = "api/v1"
-  const routesPath = "src/v1"
+  const routesPath = "src/api/v1"
 
   await fastify.register(createPlugin(await autoRoute(routesPath, apiPrefix)), {
     prefix: apiPrefix,
