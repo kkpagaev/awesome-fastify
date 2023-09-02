@@ -9,8 +9,9 @@ import {
 } from "fastify"
 import { ZodTypeAny, z } from "zod"
 import { requireAuth } from "../http/hooks/require-auth"
-import type { User } from "@prisma/client"
+import type { Role, User } from "@prisma/client"
 import { HttpException } from "../http/exceptions"
+import { requireRoles } from "../http/hooks/require-roles"
 
 export type Route<
   Body extends ZodTypeAny,
@@ -25,6 +26,7 @@ export type Route<
   params?: Params
   headers?: Headers
   preHandlers?: Array<preHandlerAsyncHookHandler>
+  roles?: Array<Role>
   guard?: Array<
     | {
         // if handler returns true throw error
@@ -103,10 +105,17 @@ export function createRoute<
   if (route.headers) schema.headers = route.headers
 
   const onRequest = Array<onRequestHookHandler>(0)
-  if (route.auth) onRequest.push(requireAuth)
+
+  if (route.roles) {
+    onRequest.push(requireAuth)
+    onRequest.push(requireRoles(route.roles))
+  } else if (route.auth) {
+    onRequest.push(requireAuth)
+  }
 
   let preHandler = route.preHandlers ?? []
 
+  // Guard
   if (route.guard) {
     const guards = route.guard.map((guard) => {
       return async (req: any) => {

@@ -5,32 +5,22 @@ import { z } from "zod"
 import { UnauthorizedException } from "../../exceptions"
 
 export default createRoute({
-  method: "POST",
-  url: "/sign-in",
   body: z.object({
     email: z.string().email(),
     password: z.string().min(6),
     username: z.string().min(2),
   }),
-  handler: async ({ body }, rep) => {
-    const { email, password } = body
-
+  handler: async ({ body: { email, password } }, rep) => {
     const user = await findUserByEmail(email)
 
-    if (!user) {
+    if (!user || !bcrypt.compareSync(password, user.password)) {
       throw new UnauthorizedException()
     }
-
-    if (!(await bcrypt.compare(password, user.password))) {
-      throw new UnauthorizedException()
-    }
-
-    const accessToken = createJwt({
-      userId: user.id,
-    })
 
     return rep.code(201).send({
-      accessToken,
+      accessToken: createJwt({
+        userId: user.id,
+      }),
     })
   },
 })
