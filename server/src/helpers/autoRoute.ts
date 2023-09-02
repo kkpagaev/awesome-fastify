@@ -1,7 +1,7 @@
 import * as fs from "fs"
 import { join } from "path"
-import { CreatePluginConfiguration, createPlugin } from "./createPlugin"
-import { FastifyPluginAsync, HTTPMethods, RouteOptions } from "fastify"
+import { CreatePluginConfiguration } from "./createPlugin"
+import { HTTPMethods, RouteOptions } from "fastify"
 
 function isDirectory(path: string): boolean {
   return fs.statSync(path).isDirectory()
