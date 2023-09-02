@@ -1,18 +1,24 @@
-import { ZodTypeAny } from "zod"
+import { ZodTypeAny, z } from "zod"
 import { Route, createRoute } from "./helpers/createRoute"
 import { PrismaClient } from "@prisma/client"
 import { config } from "./conf"
 import { prisma } from "./prisma"
 import { Config } from "./conf"
-import { RouteOptions } from "fastify"
+import { FastifyRequest, RouteOptions } from "fastify"
 
 declare global {
   function createRoute<
     B extends ZodTypeAny,
     Q extends ZodTypeAny,
     P extends ZodTypeAny,
-    H extends ZodTypeAny
-  >(route: Route<B, Q, P, H>): RouteOptions
+    H extends ZodTypeAny,
+    Request extends FastifyRequest<{
+      Body: z.infer<B>
+      Querystring: z.infer<Q>
+      Params: z.infer<P>
+      Headers: z.infer<H>
+    }>
+  >(route: Route<B, Q, P, H, Request>): RouteOptions
 
   // eslint-disable-next-line no-var
   var prisma: PrismaClient

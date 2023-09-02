@@ -13,11 +13,32 @@ import { HttpException } from "../exceptions"
 import { requireAuth } from "../hooks/require-auth"
 import { requireRoles } from "../hooks/require-roles"
 
+type Guard<TRequest extends FastifyRequest> =
+  | {
+      // if handler returns true throw error
+      unless: (req: TRequest) => boolean | Promise<boolean>
+      throw: (() => HttpException) | HttpException
+    }
+  | {
+      // if handler returns true throw error
+      if: (req: TRequest) => boolean | Promise<boolean>
+      throw: (() => HttpException) | HttpException
+    }
+  | {
+      handler: (req: TRequest) => void
+    }
+
 export type Route<
   Body extends ZodTypeAny,
   Query extends ZodTypeAny,
   Params extends ZodTypeAny,
-  Headers extends ZodTypeAny
+  Headers extends ZodTypeAny,
+  Request extends FastifyRequest<{
+    Body: z.infer<Body>
+    Querystring: z.infer<Query>
+    Params: z.infer<Params>
+    Headers: z.infer<Headers>
+  }>
 > = {
   method?: HTTPMethods
   body?: Body
@@ -27,77 +48,64 @@ export type Route<
   headers?: Headers
   preHandlers?: Array<preHandlerAsyncHookHandler>
   roles?: Array<Role>
-  guard?: Array<
-    | {
-        // if handler returns true throw error
-        unless: (
-          req: FastifyRequest<{
-            Body: z.infer<Body>
-            Querystring: z.infer<Query>
-            Params: z.infer<Params>
-            Headers: z.infer<Headers>
-          }>
-        ) => boolean | Promise<boolean>
-        throw: (() => HttpException) | HttpException
-      }
-    | {
-        // if handler returns true throw error
-        if: (
-          req: FastifyRequest<{
-            Body: z.infer<Body>
-            Querystring: z.infer<Query>
-            Params: z.infer<Params>
-            Headers: z.infer<Headers>
-          }>
-        ) => boolean | Promise<boolean>
-        throw: (() => HttpException) | HttpException
-      }
-    | {
-        handler: (
-          req: FastifyRequest<{
-            Body: z.infer<Body>
-            Querystring: z.infer<Query>
-            Params: z.infer<Params>
-            Headers: z.infer<Headers>
-          }>
-        ) => void
-      }
-  >
 } & (
   | {
       auth: true
       handler: (
-        req: FastifyRequest<{
-          Body: z.infer<Body>
-          Querystring: z.infer<Query>
-          Params: z.infer<Params>
-          Headers: z.infer<Headers>
-        }> & {
+        req: Request & {
           user: User
         },
         rep: FastifyReply
       ) => any
+      guard?:
+        | Array<Guard<Request & { user: User }>>
+        | Guard<Request & { user: User }>
     }
   | {
       auth?: false
-      handler: (
-        req: FastifyRequest<{
-          Body: z.infer<Body>
-          Querystring: z.infer<Query>
-          Params: z.infer<Params>
-          Headers: z.infer<Headers>
-        }>,
-        rep: FastifyReply
-      ) => any
+      handler: (req: Request, rep: FastifyReply) => any
+      guard?: Array<Guard<Request>> | Guard<Request>
     }
 )
+
+function generatePreHadlersFromGuards<T extends FastifyRequest>(
+  guards: Guard<T> | Array<Guard<T>>
+): Array<preHandlerAsyncHookHandler> {
+  const transform = (guard) => {
+    return async (req: any) => {
+      if ("handler" in guard) {
+        return guard.handler(req)
+      }
+      const fn = "if" in guard ? guard.if : (req) => !guard.unless(req)
+
+      if (await fn(req)) {
+        if (typeof guard.throw === "function") {
+          throw guard.throw()
+        } else {
+          throw guard.throw
+        }
+      }
+    }
+  }
+  if (Array.isArray(guards)) {
+    return guards.map((guard) => transform(guard))
+  } else {
+    return [transform(guards)]
+  }
+}
 
 export function createRoute<
   B extends ZodTypeAny,
   Q extends ZodTypeAny,
   P extends ZodTypeAny,
-  H extends ZodTypeAny
->(route: Route<B, Q, P, H>): RouteOptions {
+  H extends ZodTypeAny,
+  Request extends FastifyRequest<{
+    Body: z.infer<B>
+    Querystring: z.infer<Q>
+    Params: z.infer<P>
+    Headers: z.infer<H>
+  }>
+>(route: Route<B, Q, P, H, Request>): RouteOptions {
   const schema: FastifySchema = {}
   if (route.body) schema.body = route.body
   if (route.query) schema.querystring = route.query
@@ -113,27 +121,11 @@ export function createRoute<
     onRequest.push(requireAuth)
   }
 
-  let preHandler = route.preHandlers ?? []
+  const preHandler = route.preHandlers ?? []
 
   // Guard
   if (route.guard) {
-    const guards = route.guard.map((guard) => {
-      return async (req: any) => {
-        if ("handler" in guard) {
-          return guard.handler(req)
-        }
-        const fn = "if" in guard ? guard.if : (req) => !guard.unless(req)
-
-        if (await fn(req)) {
-          if (typeof guard.throw === "function") {
-            throw guard.throw()
-          } else {
-            throw guard.throw
-          }
-        }
-      }
-    })
-    preHandler = preHandler.concat(guards)
+    preHandler.concat(generatePreHadlersFromGuards(route.guard))
   }
 
   return {
