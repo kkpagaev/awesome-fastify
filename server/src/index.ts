@@ -12,7 +12,12 @@ import { autoRoute } from "./helpers/autoRoute"
 import { createPlugin } from "./helpers/createPlugin"
 import swagger from "@fastify/swagger"
 import fastifyPlugin from "fastify-plugin"
-import { jsonSchemaTransform } from "fastify-type-provider-zod"
+import {
+  ResponseValidationError,
+  jsonSchemaTransform,
+  serializerCompiler,
+  validatorCompiler,
+} from "fastify-type-provider-zod"
 import { UnprocessableEntityException, HttpException } from "./exceptions"
 
 declare module "fastify" {
@@ -66,10 +71,22 @@ async function main() {
       return (data) => {
         const result = schema.safeParse(data)
         if (result.success === true) {
-          return result.data
+          return {
+            value: result.data,
+          }
         } else {
           throw new UnprocessableEntityException(result.error.errors)
         }
+      }
+    })
+    .setSerializerCompiler(({ schema }: { schema: ZodSchema }) => {
+      return (data) => {
+        const result = schema.safeParse(data)
+        if (result.success) {
+          return JSON.stringify(result.data)
+        }
+
+        throw new ResponseValidationError(result)
       }
     })
     .setErrorHandler<HttpException>(async (error, request, reply) => {
