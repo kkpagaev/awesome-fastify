@@ -116,11 +116,11 @@ export function createRoute<
     onRequest.push(requireAuth)
   }
 
-  const preHandler = route.preHandlers ?? []
+  let preHandler = route.preHandlers ?? []
 
   // Guard
   if (route.guard) {
-    preHandler.concat(generatePreHadlersFromGuards(route.guard))
+    preHandler = preHandler.concat(generatePreHadlersFromGuards(route.guard))
   }
 
   return {
