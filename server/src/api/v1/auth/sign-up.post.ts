@@ -4,12 +4,10 @@ import { ConflictException } from "../../../exceptions"
 import { userEmailExists } from "../../../services/user/repository"
 
 export default createRoute({
-  guard: [
-    {
-      if: ({ body }) => userEmailExists(body.email),
-      throw: new ConflictException("User email already exists"),
-    },
-  ],
+  guard: ({ body }) =>
+    userEmailExists(body.email).then((exists) => {
+      if (exists) new ConflictException("User email already exists")
+    }),
   body: z.object({
     email: z.string().email(),
     password: z.string().min(6),

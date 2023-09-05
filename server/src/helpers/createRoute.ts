@@ -9,24 +9,10 @@ import {
 } from "fastify"
 import { ZodTypeAny, z } from "zod"
 import type { Role, User } from "@prisma/client"
-import { HttpException } from "../exceptions"
 import { requireAuth } from "../hooks/require-auth"
 import { requireRoles } from "../hooks/require-roles"
 
-type Guard<TRequest extends FastifyRequest> =
-  | {
-      // if handler returns true throw error
-      unless: (req: TRequest) => boolean | Promise<boolean>
-      throw: (() => HttpException) | HttpException
-    }
-  | {
-      // if handler returns true throw error
-      if: (req: TRequest) => boolean | Promise<boolean>
-      throw: (() => HttpException) | HttpException
-    }
-  | {
-      handler: (req: TRequest) => void
-    }
+type Guard<TRequest extends FastifyRequest> = (req: TRequest) => Promise<any>
 
 export type Route<
   Body extends ZodTypeAny,
@@ -68,27 +54,6 @@ export type Route<
     }
 )
 
-function generatePreHadlersFromGuards<T extends FastifyRequest>(
-  guards: Guard<T> | Array<Guard<T>>
-): Array<preHandlerAsyncHookHandler> {
-  return (Array.isArray(guards) ? guards : [guards]).map((guard) => {
-    return async (req: any) => {
-      if ("handler" in guard) {
-        return guard.handler(req)
-      }
-      const fn = "if" in guard ? guard.if : (req: any) => !guard.unless(req)
-
-      if (await fn(req)) {
-        if (typeof guard.throw === "function") {
-          throw guard.throw()
-        } else {
-          throw guard.throw
-        }
-      }
-    }
-  })
-}
-
 export function createRoute<
   B extends ZodTypeAny,
   Q extends ZodTypeAny,
@@ -118,9 +83,10 @@ export function createRoute<
 
   let preHandler = route.preHandlers ?? []
 
-  // Guard
   if (route.guard) {
-    preHandler = preHandler.concat(generatePreHadlersFromGuards(route.guard))
+    preHandler = preHandler.concat(
+      Array.isArray(route.guard) ? route.guard : [route.guard]
+    )
   }
 
   return {
